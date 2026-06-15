@@ -1,0 +1,16 @@
+.DS_Store
+node_modules/
+.env
+.vscode/
+*.log
+*.sqlite3
+__pycache__/
+venv/
+.env.local
+/dist
+/build
+npm-debug.log
+coverage/
+.idea/
+*.bak
+*.swp

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreshCuts Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#08080f;--surface:rgba(255,255,255,0.045);--border:rgba(255,255,255,0.08);
+    --orange:#ff6e50;--pink:#ff4eb4;--white:#fff;--gray:rgba(255,255,255,0.45);
+    --card:#13131e;--green:#4eff91;--blue:#4ec9ff;--yellow:#ffd04e;
+  }
+  html,body{height:100%;background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--white);overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center;padding:12px}
+
+  /* blobs */
+  .blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+  .blob1{top:-5%;left:-5%;width:500px;height:500px;background:radial-gradient(circle,rgba(124,92,252,.14) 0%,transparent 70%);animation:float1 12s ease-in-out infinite}
+  .blob2{bottom:-10%;right:-5%;width:600px;height:600px;background:radial-gradient(circle,rgba(255,110,80,.1) 0%,transparent 70%);animation:float2 15s ease-in-out infinite}
+
+  /* shell */
+  .shell{position:relative;z-index:1;width:100%;max-width:700px;height:92vh;max-height:860px;display:flex;flex-direction:column;background:var(--surface);backdrop-filter:blur(28px);border-radius:28px;border:1px solid var(--border);box-shadow:0 40px 100px rgba(0,0,0,.6);overflow:hidden}
+
+  /* header */
+  .header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);flex-shrink:0}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--pink));display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 16px rgba(255,110,80,.4)}
+  .brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.01em}
+  .brand-sub{font-size:10px;color:var(--gray);letter-spacing:.06em;margin-top:1px}
+  .status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2.5s infinite}
+
+  /* tabs */
+  .tabs{display:flex;padding:0 16px;border-bottom:1px solid var(--border);gap:2px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:10px 14px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--gray);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;margin-bottom:-1px;white-space:nowrap}
+  .tab.active{color:var(--white);border-bottom-color:var(--orange)}
+
+  /* panels */
+  .panel{display:none;flex:1;flex-direction:column;overflow:hidden}
+  .panel.active{display:flex}
+  .scroll{flex:1;overflow-y:auto;padding:16px 18px}
+  .scroll::-webkit-scrollbar{width:4px}
+  .scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+
+  /* chat */
+  .chat-area{flex:1;overflow-y:auto;padding:18px 18px 8px;display:flex;flex-direction:column;gap:12px}
+  .chat-area::-webkit-scrollbar{width:4px}
+  .chat-area::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+  .msg-row{display:flex;align-items:flex-end;gap:8px;animation:fadeUp .3s ease}
+  .msg-row.user{justify-content:flex-end}
+  .avatar{width:30px;height:30px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--orange),var(--pink));display:flex;align-items:center;justify-content:center;font-size:13px}
+  .bubble{max-width:76%;padding:10px 14px;font-size:14px;line-height:1.6}
+  .bubble.ai{border-radius:16px 16px 16px 4px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:rgba(255,255,255,.85)}
+  .bubble.user{border-radius:16px 16px 4px 16px;background:linear-gradient(135deg,#7c5cfc,#9b70ff);color:#fff;max-width:72%}
+  .typing span{display:inline-block;width:6px;height:6px;background:rgba(255,255,255,.5);border-radius:50%;margin:0 2px;animation:bounce .9s infinite}
+  .typing span:nth-child(2){animation-delay:.15s}
+  .typing span:nth-child(3){animation-delay:.3s}
+  .quick-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;flex-shrink:0}
+  .chip{padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:rgba(255,255,255,.65);font-size:12px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .chip:hover{background:rgba(255,255,255,.13)}
+  .input-row{display:flex;gap:8px;padding:10px 14px 14px;border-top:1px solid var(--border);background:rgba(255,255,255,.02);flex-shrink:0}
+  .chat-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 14px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none}
+  .send-btn{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--pink));border:none;color:#fff;font-size:15px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 12px rgba(255,110,80,.35);transition:opacity .2s}
+  .send-btn:disabled{opacity:.35;cursor:not-allowed}
+
+  /* book / intake */
+  .intake-wrap{max-width:480px;margin:0 auto}
+  .intake-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:6px}
+  .step-dots{display:flex;gap:6px;margin-bottom:20px}
+  .step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:background .3s}
+  .step-dot.done{background:var(--orange)}
+  .step-label{font-size:11px;color:var(--orange);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+  .form-step{display:flex;flex-direction:column;gap:14px;animation:fadeUp .3s ease}
+  .field-group{display:flex;flex-direction:column;gap:6px}
+  .field-label{font-size:12px;color:var(--gray);font-weight:500}
+  .field{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none}
+  .field:focus{border-color:rgba(255,110,80,.5)}
+  .radio-group{display:flex;flex-wrap:wrap;gap:8px}
+  .radio-btn{padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .radio-btn.selected{background:rgba(255,110,80,.2);border-color:var(--orange);color:var(--orange)}
+  .svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .svc-option{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .svc-option.selected{background:rgba(255,110,80,.15);border-color:var(--orange)}
+  .svc-icon{font-size:22px}
+  .svc-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500;text-align:center}
+  .svc-price{font-size:11px;color:var(--orange)}
+  .stylist-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .stylist-option{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .stylist-option.selected{background:rgba(255,110,80,.1);border-color:var(--orange)}
+  .st-name{font-size:12px;color:#fff;font-weight:600;text-align:center}
+  .st-role{font-size:10px;color:var(--orange);text-align:center}
+  .nav-row{display:flex;justify-content:space-between;gap:10px;margin-top:4px}
+  .next-btn{flex:1;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--orange),var(--pink));color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s}
+  .next-btn:disabled{opacity:.35;cursor:not-allowed}
+  .back-btn{padding:12px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .success-box{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 20px;text-align:center}
+  .success-icon{font-size:52px}
+  .success-title{font-family:'Syne',sans-serif;font-weight:800;font-size:24px}
+  .success-sub{font-size:14px;color:var(--gray);max-width:280px;line-height:1.5}
+  .summary-card{width:100%;max-width:340px;background:rgba(255,255,255,.06);border-radius:16px;border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:10px}
+  .summary-row{display:flex;justify-content:space-between;font-size:13px}
+  .summary-label{color:rgba(255,255,255,.35)}
+  .summary-val{color:#fff;font-weight:500}
+  .reset-btn{padding:11px 28px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--orange),var(--pink));color:#fff;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+  /* team */
+  .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stylist-card{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:18px;padding:18px 14px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform .2s;cursor:pointer}
+  .stylist-card:hover{transform:translateY(-4px)}
+  .stylist-avatar{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;font-size:32px}
+  .stylist-card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px}
+  .stylist-card-role{font-size:11px;font-weight:500}
+  .stylist-card-spec{font-size:11px;color:rgba(255,255,255,.35);text-align:center}
+  .book-btn{margin-top:8px;padding:7px 16px;border-radius:10px;border:none;color:#fff;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500}
+
+  /* services */
+  .svc-list{display:flex;flex-direction:column;gap:9px}
+  .svc-card{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px}
+  .svc-card-icon{font-size:26px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border-radius:11px;flex-shrink:0}
+  .svc-info{flex:1}
+  .svc-card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+  .svc-card-desc{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+  .svc-time{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px}
+  .svc-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+  .svc-price{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--orange)}
+  .book-small{padding:5px 12px;border-radius:9px;border:none;background:linear-gradient(135deg,var(--orange),var(--pink));color:#fff;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+  /* history */
+  .history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .history-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px}
+  .history-count{font-size:12px;color:var(--gray);background:rgba(255,255,255,.07);padding:4px 10px;border-radius:20px}
+  .appt-card{display:flex;justify-content:space-between;align-items:flex-start;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px;margin-bottom:8px;gap:10px}
+  .appt-client{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:3px}
+  .appt-meta{font-size:12px;color:rgba(255,255,255,.45)}
+  .appt-contact{font-size:11px;color:rgba(255,255,255,.25);margin-top:2px}
+  .appt-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+  .status-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize}
+  .appt-actions{display:flex;gap:5px}
+  .confirm-btn{padding:5px 10px;border-radius:8px;border:none;background:rgba(78,255,145,.2);color:var(--green);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .cancel-btn{padding:5px 8px;border-radius:8px;border:none;background:rgba(255,110,80,.15);color:var(--orange);font-size:11px;cursor:pointer}
+  .complete-btn{padding:5px 10px;border-radius:8px;border:none;background:rgba(78,201,255,.15);color:var(--blue);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+  /* dashboard */
+  .dash-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px}
+  .dash-sub{font-size:12px;color:var(--gray);margin-bottom:16px}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+  .stat-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:16px 14px}
+  .stat-icon{font-size:22px;margin-bottom:4px}
+  .stat-value{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;margin-bottom:2px}
+  .stat-label{font-size:11px;color:var(--gray)}
+  .section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px;margin-top:6px}
+  .schedule-row{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border-radius:12px;padding:11px 13px;margin-bottom:7px;border:1px solid rgba(255,255,255,.06)}
+  .schedule-time{font-size:13px;color:var(--orange);font-weight:600;width:68px;flex-shrink:0}
+  .schedule-client{font-size:14px;font-weight:600}
+  .schedule-meta{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+  .load-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .load-name{width:100px;font-size:13px;color:rgba(255,255,255,.7);flex-shrink:0}
+  .load-bar{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+  .load-fill{height:100%;border-radius:4px;transition:width .6s ease}
+  .load-count{font-size:12px;font-weight:600;width:56px;text-align:right;flex-shrink:0}
+
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,30px)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<div class="shell">
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">💈</div>
+      <div>
+        <div class="brand-name">FreshCuts Studio</div>
+        <div class="brand-sub">Book · Chat · Manage</div>
+      </div>
+    </div>
+    <div class="status"><span class="dot"></span>Online</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('chat')">Chat</button>
+    <button class="tab" onclick="switchTab('book')">Book</button>
+    <button class="tab" onclick="switchTab('team')">Team</button>
+    <button class="tab" onclick="switchTab('services')">Services</button>
+    <button class="tab" onclick="switchTab('history')">History</button>
+    <button class="tab" onclick="switchTab('dashboard')">Dashboard</button>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel active" id="panel-chat">
+    <div class="chat-area" id="chat-area">
+      <div class="msg-row">
+        <div class="avatar">💈</div>
+        <div class="bubble ai">Hey! 👋 Welcome to <strong>FreshCuts Studio</strong>. I can help you book an appointment, check our services, or answer any questions. What can I do for you today?</div>
+      </div>
+    </div>
+    <div class="quick-wrap" id="quick-wrap">
+      <button class="chip" onclick="sendQuick('I\'d like to book an appointment')">📅 Book Appointment</button>
+      <button class="chip" onclick="sendQuick('What services do you offer?')">💈 See Services</button>
+      <button class="chip" onclick="sendQuick('What are your hours?')">⏰ Shop Hours</button>
+      <button class="chip" onclick="sendQuick('Can you help me pick a hairstyle?')">✂️ Style Advice</button>
+      <button class="chip" onclick="sendQuick('How much do your services cost?')">💰 Pricing</button>
+      <button class="chip" onclick="sendQuick('I need to reschedule my appointment')">🔄 Reschedule</button>
+    </div>
+    <div class="input-row">
+      <input class="chat-input" id="chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMessage()">
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- BOOK -->
+  <div class="panel" id="panel-book">
+    <div class="scroll">
+      <div class="intake-wrap" id="intake-wrap">
+        <div class="intake-title">Book an Appointment</div>
+        <div class="step-dots" id="step-dots">
+          <div class="step-dot done"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
+        <div id="intake-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="panel" id="panel-team">
+    <div class="scroll">
+      <div class="team-grid" id="team-grid"></div>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <div class="panel" id="panel-services">
+    <div class="scroll">
+      <div class="svc-list" id="svc-list"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="panel" id="panel-history">
+    <div class="scroll" id="history-scroll"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel" id="panel-dashboard">
+    <div class="scroll" id="dashboard-scroll"></div>
+  </div>
+</div>
+
+<script>
+const SYSTEM = `You are a smart booking assistant for FreshCuts Studio. Help clients book appointments, learn about services, get hair advice, and answer FAQs.
+Services: Haircut $30 (30min), Fade/Taper $35 (45min), Beard Trim $20 (20min), Cut+Beard $45 (60min), Hair Color $80+ (90min), Braids $60+ (2hr), Kid's Cut $20 (20min).
+Stylists: Marcus (Fades), Jada (Color/Braids), Trey (Cuts/Beards), Sofia (All types).
+Hours: Mon-Sat 9am-7pm, Sun 10am-5pm. Be friendly, concise, use emojis.`;
+
+const STYLISTS = [
+  {name:'Marcus',role:'Master Barber',spec:'Fades & Tapers',color:'#7c5cfc',emoji:'✂️'},
+  {name:'Jada',role:'Color Specialist',spec:'Color & Braids',color:'#ff6eb4',emoji:'🎨'},
+  {name:'Trey',role:'Senior Barber',spec:'Cuts & Beards',color:'#4ec9ff',emoji:'💈'},
+  {name:'Sofia',role:'Stylist',spec:'All Hair Types',color:'#4eff91',emoji:'✨'},
+];
+const SERVICES = [
+  {name:'Haircut',price:'$30',time:'30 min',icon:'✂️',desc:'Classic cut, any style'},
+  {name:'Fade / Taper',price:'$35',time:'45 min',icon:'💈',desc:'Skin, low, mid, or high fade'},
+  {name:'Beard Trim',price:'$20',time:'20 min',icon:'🧔',desc:'Shape, line up & oil'},
+  {name:'Cut + Beard',price:'$45',time:'60 min',icon:'⭐',desc:'Full grooming combo'},
+  {name:'Hair Color',price:'$80+',time:'90 min',icon:'🎨',desc:'Full color or highlights'},
+  {name:'Braids',price:'$60+',time:'2 hrs',icon:'🪢',desc:'Box braids, cornrows & more'},
+  {name:"Kid's Cut",price:'$20',time:'20 min',icon:'🧒',desc:'Ages 12 and under'},
+];
+let APPOINTMENTS = [
+  {id:1,client:'Jordan Miles',service:'Fade / Taper',stylist:'Marcus',date:'Jun 6, 2026',time:'10:00 AM',status:'confirmed',phone:'555-0101'},
+  {id:2,client:'Aisha Brown',service:'Braids',stylist:'Jada',date:'Jun 6, 2026',time:'11:30 AM',status:'confirmed',phone:'555-0102'},
+  {id:3,client:'Devon King',service:'Cut + Beard',stylist:'Trey',date:'Jun 6, 2026',time:'1:00 PM',status:'pending',phone:'555-0103'},
+  {id:4,client:'Maya Chen',service:'Hair Color',stylist:'Sofia',date:'Jun 7, 2026',time:'9:00 AM',status:'confirmed',phone:'555-0104'},
+  {id:5,client:'Tyler Ross',service:'Haircut',stylist:'Marcus',date:'Jun 7, 2026',time:'2:00 PM',status:'pending',phone:'555-0105'},
+  {id:6,client:'Zara Williams',service:"Kid's Cut",stylist:'Sofia',date:'Jun 5, 2026',time:'3:00 PM',status:'completed',phone:'555-0106'},
+  {id:7,client:'Cam Davis',service:'Beard Trim',stylist:'Trey',date:'Jun 5, 2026',time:'4:30 PM',status:'completed',phone:'555-0107'},
+];
+
+let chatHistory = [];
+let intakeStep = 0;
+let intakeData = {};
+let loading = false;
+
+// ── TABS ──
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if(name==='team') renderTeam();
+  if(name==='services') renderServices();
+  if(name==='history') renderHistory();
+  if(name==='dashboard') renderDashboard();
+  if(name==='book') renderIntake();
+}
+
+// ── CHAT ──
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text || loading) return;
+  input.value = '';
+  document.getElementById('quick-wrap').style.display = 'none';
+  addMsg('user', text);
+  chatHistory.push({role:'user',content:text});
+  showTyping();
+  loading = true;
+  document.getElementById('send-btn').disabled = true;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:SYSTEM,messages:chatHistory})
+    });
+    const data = await res.json();
+    const reply = data.content?.map(b=>b.text||'').join('') || 'Sorry, try again!';
+    chatHistory.push({role:'assistant',content:reply});
+    removeTyping();
+    addMsg('ai', reply);
+  } catch(e) {
+    removeTyping();
+    addMsg('ai','Connection issue — please try again!');
+  }
+  loading = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+function sendQuick(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+function addMsg(role, text) {
+  const area = document.getElementById('chat-area');
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (role==='user'?' user':'');
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + role;
+  bubble.innerHTML = text.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  if(role==='ai'){
+    const av = document.createElement('div');
+    av.className='avatar';av.textContent='💈';
+    row.appendChild(av);
+  }
+  row.appendChild(bubble);
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showTyping() {
+  const area = document.getElementById('chat-area');
+  const row = document.createElement('div');
+  row.className='msg-row';row.id='typing-row';
+  row.innerHTML='<div class="avatar">💈</div><div class="bubble ai"><div class="typing"><span></span><span></span><span></span></div></div>';
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+function removeTyping(){const t=document.getElementById('typing-row');if(t)t.remove();}
+
+// ── INTAKE ──
+function renderIntake() {
+  if(intakeData.submitted){renderSuccess();return;}
+  const dots = document.getElementById('step-dots');
+  dots.querySelectorAll('.step-dot').forEach((d,i)=>d.classList.toggle('done',i<=intakeStep));
+  const c = document.getElementById('intake-content');
+  c.innerHTML='';
+  const steps=[step0,step1,step2,step3];
+  steps[intakeStep](c);
+}
+
+function step0(c){
+  c.innerHTML=`<div class="form-step">
+    <div class="step-label">Step 1 — Your Info</div>
+    <div class="field-group"><label class="field-label">Full Name</label><input class="field" id="f-name" placeholder="Jordan Miles" value="${intakeData.name||''}"></div>
+    <div class="field-group"><label class="field-label">Phone</label><input class="field" id="f-phone" type="tel" placeholder="555-0100" value="${intakeData.phone||''}"></div>
+    <div class="field-group"><label class="field-label">Email</label><input class="field" id="f-email" type="email" placeholder="you@email.com" value="${intakeData.email||''}"></div>
+    <div class="field-group"><label class="field-label">First Visit?</label>
+      <div class="radio-group">
+        <button class="radio-btn ${intakeData.firstVisit==='Yes'?'selected':''}" onclick="selectRadio('firstVisit','Yes',this)">Yes</button>
+        <button class="radio-btn ${intakeData.firstVisit==='No'?'selected':''}" onclick="selectRadio('firstVisit','No',this)">No</button>
+      </div>
+    </div>
+    <button class="next-btn" onclick="nextStep(0)">Next →</button>
+  </div>`;
+}
+
+function step1(c){
+  const grid = SERVICES.map(s=>`<button class="svc-option ${intakeData.service===s.name?'selected':''}" onclick="selectSvc('${s.name}',this)">
+    <span class="svc-icon">${s.icon}</span><span class="svc-name">${s.name}</span><span class="svc-price">${s.price}</span>
+  </button>`).join('');
+  const hairTypes=['Fine','Medium','Thick','Curly','Coily'].map(v=>`<button class="radio-btn ${intakeData.hairType===v?'selected':''}" onclick="selectRadio('hairType','${v}',this)">${v}</button>`).join('');
+  c.innerHTML=`<div class="form-step">
+    <div class="step-label">Step 2 — Choose Service</div>
+    <div class="svc-grid">${grid}</div>
+    <div class="field-group"><label class="field-label">Hair Type</label><div class="radio-group">${hairTypes}</div></div>
+    <div class="nav-row"><button class="back-btn" onclick="prevStep()">← Back</button><button class="next-btn" onclick="nextStep(1)">Next →</button></div>
+  </div>`;
+}
+
+function step2(c){
+  const opts=[{name:'Any Available',role:'First open slot',emoji:'🎲'},...STYLISTS].map(st=>`
+    <button class="stylist-option ${intakeData.stylist===st.name?'selected':''}" onclick="selectStylist('${st.name}',this)">
+      <span style="font-size:24px">${st.emoji}</span>
+      <span class="st-name">${st.name}</span>
+      <span class="st-role">${st.role}</span>
+    </button>`).join('');
+  c.innerHTML=`<div class="form-step">
+    <div class="step-label">Step 3 — Pick a Stylist</div>
+    <div class="stylist-grid">${opts}</div>
+    <div class="nav-row"><button class="back-btn" onclick="prevStep()">← Back</button><button class="next-btn" onclick="nextStep(2)">Next →</button></div>
+  </div>`;
+}
+
+function step3(c){
+  c.innerHTML=`<div class="form-step">
+    <div class="step-label">Step 4 — Date & Time</div>
+    <div class="field-group"><label class="field-label">Preferred Date</label><input class="field" id="f-date" type="date" value="${intakeData.date||''}"></div>
+    <div class="field-group"><label class="field-label">Preferred Time</label><input class="field" id="f-time" type="time" value="${intakeData.time||''}"></div>
+    <div class="field-group"><label class="field-label">Notes (optional)</label><textarea class="field" id="f-notes" style="height:80px;resize:none" placeholder="Any special requests...">${intakeData.notes||''}</textarea></div>
+    <div class="nav-row"><button class="back-btn" onclick="prevStep()">← Back</button><button class="next-btn" onclick="submitIntake()">Confirm Booking ✓</button></div>
+  </div>`;
+}
+
+function renderSuccess(){
+  document.getElementById('intake-wrap').innerHTML=`<div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-title">You're booked!</div>
+    <div class="success-sub">We'll send a confirmation to ${intakeData.email||intakeData.phone}. See you soon!</div>
+    <div class="summary-card">
+      <div class="summary-row"><span class="summary-label">Name</span><span class="summary-val">${intakeData.name}</span></div>
+      <div class="summary-row"><span class="summary-label">Service</span><span class="summary-val">${intakeData.service}</span></div>
+      <div class="summary-row"><span class="summary-label">Stylist</span><span class="summary-val">${intakeData.stylist||'Any available'}</span></div>
+      <div class="summary-row"><span class="summary-label">Date</span><span class="summary-val">${intakeData.date}</span></div>
+      <div class="summary-row"><span class="summary-label">Time</span><span class="summary-val">${intakeData.time}</span></div>
+    </div>
+    <button class="reset-btn" onclick="resetIntake()">Book Another</button>
+  </div>`;
+}
+
+function selectRadio(field,val,btn){
+  intakeData[field]=val;
+  btn.closest('.radio-group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function selectSvc(name,btn){
+  intakeData.service=name;
+  document.querySelectorAll('.svc-option').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function selectStylist(name,btn){
+  intakeData.stylist=name;
+  document.querySelectorAll('.stylist-option').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function nextStep(from){
+  if(from===0){
+    intakeData.name=document.getElementById('f-name')?.value||'';
+    intakeData.phone=document.getElementById('f-phone')?.value||'';
+    intakeData.email=document.getElementById('f-email')?.value||'';
+    if(!intakeData.name||!intakeData.phone){alert('Please enter your name and phone.');return;}
+  }
+  if(from===1&&!intakeData.service){alert('Please choose a service.');return;}
+  if(from===2&&!intakeData.stylist){alert('Please pick a stylist.');return;}
+  intakeStep=from+1;
+  renderIntake();
+}
+function prevStep(){intakeStep=Math.max(0,intakeStep-1);renderIntake();}
+function submitIntake(){
+  intakeData.date=document.getElementById('f-date')?.value||'';
+  intakeData.time=document.getElementById('f-time')?.value||'';
+  intakeData.notes=document.getElementById('f-notes')?.value||'';
+  if(!intakeData.date||!intakeData.time){alert('Please select a date and time.');return;}
+  const d=new Date(intakeData.date);
+  const dateStr=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const t=intakeData.time.split(':');
+  const h=parseInt(t[0]),m=t[1],ampm=h>=12?'PM':'AM';
+  const timeStr=`${h%12||12}:${m} ${ampm}`;
+  APPOINTMENTS.unshift({id:APPOINTMENTS.length+1,client:intakeData.name,service:intakeData.service,stylist:intakeData.stylist||'Any',date:dateStr,time:timeStr,status:'pending',phone:intakeData.phone});
+  intakeData.submitted=true;
+  renderSuccess();
+}
+function resetIntake(){intakeStep=0;intakeData={};document.getElementById('intake-wrap').innerHTML=`<div class="intake-title">Book an Appointment</div><div class="step-dots" id="step-dots"><div class="step-dot done"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div></div><div id="intake-content"></div>`;renderIntake();}
+
+// ── TEAM ──
+function renderTeam(){
+  document.getElementById('team-grid').innerHTML=STYLISTS.map(st=>`
+    <div class="stylist-card" onclick="goBookStylist('${st.name}')">
+      <div class="stylist-avatar" style="background:${st.color}22;border:2px solid ${st.color}44">${st.emoji}</div>
+      <div class="stylist-card-name">${st.name}</div>
+      <div class="stylist-card-role" style="color:${st.color}">${st.role}</div>
+      <div class="stylist-card-spec">${st.spec}</div>
+      <button class="book-btn" style="background:linear-gradient(135deg,${st.color},${st.color}99)">Book ${st.name}</button>
+    </div>`).join('');
+}
+function goBookStylist(name){
+  intakeData.stylist=name;
+  document.querySelectorAll('.tab').forEach((t,i)=>{if(i===1)t.classList.add('active');else t.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach((p,i)=>{if(i===1)p.classList.add('active');else p.classList.remove('active');});
+  renderIntake();
+}
+
+// ── SERVICES ──
+function renderServices(){
+  document.getElementById('svc-list').innerHTML=SERVICES.map(s=>`
+    <div class="svc-card">
+      <div class="svc-card-icon">${s.icon}</div>
+      <div class="svc-info">
+        <div class="svc-card-name">${s.name}</div>
+        <div class="svc-card-desc">${s.desc}</div>
+        <div class="svc-time">⏱ ${s.time}</div>
+      </div>
+      <div class="svc-right">
+        <div class="svc-price">${s.price}</div>
+        <button class="book-small" onclick="goBookService('${s.name}')">Book</button>
+      </div>
+    </div>`).join('');
+}
+function goBookService(name){
+  intakeData.service=name;
+  document.querySelectorAll('.tab').forEach((t,i)=>{if(i===1)t.classList.add('active');else t.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach((p,i)=>{if(i===1)p.classList.add('active');else p.classList.remove('active');});
+  intakeStep=1;renderIntake();
+}
+
+// ── HISTORY ──
+const SC={confirmed:'#4eff91',pending:'#ffd04e',completed:'#4ec9ff',cancelled:'#ff6e50'};
+const SB={confirmed:'rgba(78,255,145,.12)',pending:'rgba(255,208,78,.12)',completed:'rgba(78,201,255,.12)',cancelled:'rgba(255,110,80,.12)'};
+
+function renderHistory(){
+  const el=document.getElementById('history-scroll');
+  el.innerHTML=`<div class="history-header"><div class="history-title">Appointment History</div><div class="history-count">${APPOINTMENTS.length} total</div></div>`+
+  APPOINTMENTS.map(a=>`
+    <div class="appt-card" id="appt-${a.id}">
+      <div>
+        <div class="appt-client">${a.client}</div>
+        <div class="appt-meta">${a.service} · ${a.stylist}</div>
+        <div class="appt-meta">${a.date} at ${a.time}</div>
+        <div class="appt-contact">${a.phone}</div>
+      </div>
+      <div class="appt-right">
+        <span class="status-badge" style="color:${SC[a.status]};background:${SB[a.status]}">${a.status}</span>
+        ${a.status==='pending'?`<div class="appt-actions"><button class="confirm-btn" onclick="updateAppt(${a.id},'confirmed')">✓ Confirm</button><button class="cancel-btn" onclick="updateAppt(${a.id},'cancelled')">✕</button></div>`:''}
+        ${a.status==='confirmed'?`<button class="complete-btn" onclick="updateAppt(${a.id},'completed')">Mark Done</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function updateAppt(id,status){
+  const a=APPOINTMENTS.find(x=>x.id===id);
+  if(a){a.status=status;renderHistory();if(document.getElementById('panel-dashboard').classList.contains('active'))renderDashboard();}
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const today='Jun 6, 2026';
+  const todayA=APPOINTMENTS.filter(a=>a.date===today);
+  const confirmed=APPOINTMENTS.filter(a=>a.status==='confirmed').length;
+  const completed=APPOINTMENTS.filter(a=>a.status==='completed').length;
+  const revenue=completed*38;
+  const el=document.getElementById('dashboard-scroll');
+  el.innerHTML=`
+    <div class="dash-title">Owner Dashboard</div>
+    <div class="dash-sub">Today · Jun 6, 2026</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value" style="color:#7c5cfc">${todayA.length}</div><div class="stat-label">Today's Bookings</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" style="color:var(--green)">${confirmed}</div><div class="stat-label">Confirmed</div></div>
+      <div class="stat-card"><div class="stat-icon">💈</div><div class="stat-value" style="color:var(--blue)">${completed}</div><div class="stat-label">Completed</div></div>
+      <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" style="color:var(--yellow)">$${revenue}</div><div class="stat-label">Revenue (done)</div></div>
+    </div>
+    <div class="section-title">Today's Schedule</div>
+    ${todayA.length===0?'<div style="color:var(--gray);font-size:13px;padding:16px 0;text-align:center">No appointments today</div>':
+    todayA.map(a=>`<div class="schedule-row">
+      <div class="schedule-time">${a.time}</div>
+      <div><div class="schedule-client">${a.client}</div><div class="schedule-meta">${a.service} · ${a.stylist}</div></div>
+      <span class="status-badge" style="color:${SC[a.status]};background:${SB[a.status]};margin-left:auto">${a.status}</span>
+    </div>`).join('')}
+    <div class="section-title" style="margin-top:16px">Stylist Load</div>
+    ${STYLISTS.map(st=>{
+      const count=APPOINTMENTS.filter(a=>a.stylist===st.name).length;
+      const pct=Math.round(count/APPOINTMENTS.length*100);
+      return `<div class="load-row">
+        <div class="load-name">${st.emoji} ${st.name}</div>
+        <div class="load-bar"><div class="load-fill" style="width:${pct}%;background:${st.color}"></div></div>
+        <div class="load-count" style="color:${st.color}">${count} appts</div>
+      </div>`;
+    }).join('')}`;
+}
+</script>
+</body>
+</html>

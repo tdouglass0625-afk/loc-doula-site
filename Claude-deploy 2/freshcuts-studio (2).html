@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100 Degrees Barbershop</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#08080f;--surface:rgba(255,255,255,0.045);--border:rgba(255,255,255,0.08);
+    --orange:#ff6e50;--pink:#ff4eb4;--white:#fff;--gray:rgba(255,255,255,0.45);
+    --card:#13131e;--green:#4eff91;--blue:#4ec9ff;--yellow:#ffd04e;
+  }
+  html,body{height:100%;background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--white);overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center;padding:12px}
+  .blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+  .blob1{top:-5%;left:-5%;width:500px;height:500px;background:radial-gradient(circle,rgba(124,92,252,.14) 0%,transparent 70%);animation:float1 12s ease-in-out infinite}
+  .blob2{bottom:-10%;right:-5%;width:600px;height:600px;background:radial-gradient(circle,rgba(255,110,80,.1) 0%,transparent 70%);animation:float2 15s ease-in-out infinite}
+  .shell{position:relative;z-index:1;width:100%;max-width:700px;height:92vh;max-height:860px;display:flex;flex-direction:column;background:var(--surface);backdrop-filter:blur(28px);border-radius:28px;border:1px solid var(--border);box-shadow:0 40px 100px rgba(0,0,0,.6);overflow:hidden}
+  .header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);flex-shrink:0}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--pink));display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 16px rgba(255,110,80,.4)}
+  .brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.01em}
+  .brand-sub{font-size:10px;color:var(--gray);letter-spacing:.06em;margin-top:1px}
+  .status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2.5s infinite}
+  .tabs{display:flex;padding:0 16px;border-bottom:1px solid var(--border);gap:2px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:10px 14px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--gray);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;margin-bottom:-1px;white-space:nowrap}
+  .tab.active{color:var(--white);border-bottom-color:var(--orange)}
+  .panel{display:none;flex:1;flex-direction:column;overflow:hidden}
+  .panel.active{display:flex}
+  .scroll{flex:1;overflow-y:auto;padding:16px 18px}
+  .scroll::-webkit-scrollbar{width:4px}
+  .scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+
+  /* chat */
+  .chat-area{flex:1;overflow-y:auto;padding:18px 18px 8px;display:flex;flex-direction:column;gap:12px}
+  .chat-area::-webkit-scrollbar{width:4px}
+  .chat-area::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+  .msg-row{display:flex;align-items:flex-end;gap:8px;animation:fadeUp .3s ease}
+  .msg-row.user{justify-content:flex-end}
+  .avatar{width:30px;height:30px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--orange),var(--pink));display:flex;align-items:center;justify-content:center;font-size:13px}
+  .bubble{max-width:76%;padding:10px 14px;font-size:14px;line-height:1.6}
+  .bubble.ai{border-radius:16px 16px 16px 4px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:rgba(255,255,255,.85)}
+  .bubble.user{border-radius:16px 16px 4px 16px;background:linear-gradient(135deg,#7c5cfc,#9b70ff);color:#fff;max-width:72%}
+  .typing span{display:inline-block;width:6px;height:6px;background:rgba(255,255,255,.5);border-radius:50%;margin:0 2px;animation:bounce .9s infinite}
+  .typing span:nth-child(2){animation-delay:.15s}
+  .typing span:nth-child(3){animation-delay:.3s}
+  .quick-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;flex-shrink:0}
+  .chip{padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:rgba(255,255,255,.65);font-size:12px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .chip:hover{background:rgba(255,255,255,.13)}
+  .input-row{display:flex;gap:8px;padding:10px 14px 14px;border-top:1px solid var(--border);background:rgba(255,255,255,.02);flex-shrink:0}
+  .chat-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 14px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none}
+  .send-btn{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--pink));border:none;color:#fff;font-size:15px;cursor:pointer;flex-shrink:0;transition:opacity .2s}
+  .send-btn:disabled{opacity:.35;cursor:not-allowed}
+
+  /* slots */
+  .slots-bubble{background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:16px 16px 16px 4px;padding:12px 14px;max-width:90%;animation:fadeUp .3s ease}
+  .slots-title{font-size:13px;color:var(--gray);margin-bottom:10px}
+  .slots-grid{display:flex;flex-wrap:wrap;gap:6px}
+  .slot-btn{padding:7px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .slot-btn:hover{background:rgba(255,110,80,.2);border-color:var(--orange);color:var(--orange)}
+  .slot-btn.booked{background:rgba(78,255,145,.08);border-color:rgba(78,255,145,.3);color:var(--green);cursor:default}
+
+  /* book */
+  .intake-wrap{max-width:480px;margin:0 auto}
+  .intake-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:6px}
+  .step-dots{display:flex;gap:6px;margin-bottom:20px}
+  .step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:background .3s}
+  .step-dot.done{background:var(--orange)}
+  .step-label{font-size:11px;color:var(--orange);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+  .form-step{display:flex;flex-direction:column;gap:14px;animation:fadeUp .3s ease}
+  .field-group{display:flex;flex-direction:column;gap:6px}
+  .field-label{font-size:12px;color:var(--gray);font-weight:500}
+  .field{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none}
+  .field:focus{border-color:rgba(255,110,80,.5)}
+  .radio-group{display:flex;flex-wrap:wrap;gap:8px}
+  .radio-btn{padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .radio-btn.selected{background:rgba(255,110,80,.2);border-color:var(--orange);color:var(--orange)}
+  .svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .svc-option{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .svc-option.selected{background:rgba(255,110,80,.15);border-color:var(--orange)}
+  .svc-icon{font-size:22px}
+  .svc-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500;text-align:center}
+  .svc-price{font-size:11px;color:var(--orange)}
+  .stylist-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .stylist-option{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .stylist-option.selected{background:rgba(255,110,80,.1);border-color:var(--orange)}
+  .st-name{font-size:12px;color:#fff;font-weight:600;text-align:center}
+  .st-role{font-size:10px;color:var(--orange);text-align:center}
+
+  /* availability grid in book tab */
+  .avail-section{margin-top:4px}
+  .avail-day-label{font-size:11px;color:var(--orange);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin:14px 0 8px}
+  .time-slots{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
+  .time-slot{padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(255,255,255,.75);font-size:13px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .time-slot:hover{background:rgba(255,110,80,.15);border-color:var(--orange)}
+  .time-slot.taken{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.05);color:rgba(255,255,255,.2);cursor:not-allowed;text-decoration:line-through}
+  .time-slot.selected-slot{background:rgba(255,110,80,.25);border-color:var(--orange);color:var(--orange);font-weight:600}
+  .nav-row{display:flex;justify-content:space-between;gap:10px;margin-top:4px}
+  .next-btn{flex:1;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--orange),var(--pink));color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s}
+  .next-btn:disabled{opacity:.35;cursor:not-allowed}
+  .back-btn{padding:12px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .success-box{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 20px;text-align:center}
+  .success-icon{font-size:52px}
+  .success-title{font-family:'Syne',sans-serif;font-weight:800;font-size:24px}
+  .success-sub{font-size:14px;color:var(--gray);max-width:280px;line-height:1.5}
+  .summary-card{width:100%;max-width:340px;background:rgba(255,255,255,.06);border-radius:16px;border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:10px}
+  .summary-row{display:flex;justify-content:space-between;font-size:13px}
+  .summary-label{color:rgba(255,255,255,.35)}
+  .summary-val{color:#fff;font-weight:500}
+  .reset-btn{padding:11px 28px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--orange),var(--pink));color:#fff;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+  /* team */
+  .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stylist-card{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:18px;padding:18px 14px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform .2s;cursor:pointer}
+  .stylist-card:hover{transform:translateY(-4px)}
+  .stylist-avatar{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;font-size:32px}
+  .stylist-card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px}
+  .stylist-card-role{font-size:11px;font-weight:500}
+  .stylist-card-spec{font-size:11px;color:rgba(255,255,255,.35);text-align:center}
+  .book-btn{margin-top:8px;padding:7px 16px;border-radius:10px;border:none;color:#fff;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500}
+
+  /* services */
+  .svc-list{display:flex;flex-direction:column;gap:9px}
+  .svc-card{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px}
+  .svc-card-icon{font-size:26px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border-radius:11px;flex-shrink:0}
+  .svc-info{flex:1}
+  .svc-card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+  .svc-card-desc{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+  .svc-time-label{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px}
+  .svc-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+  .svc-price{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--orange)}
+  .book-small{padding:5px 12px;border-radius:9px;border:none;background:linear-gradient(135deg,var(--orange),var(--pink));color:#fff;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+  /* history */
+  .history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .history-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px}
+  .history-count{font-size:12px;color:var(--gray);background:rgba(255,255,255,.07);padding:4px 10px;border-radius:20px}
+  .appt-card{display:flex;justify-content:space-between;align-items:flex-start;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px;margin-bottom:8px;gap:10px}
+  .appt-client{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:3px}
+  .appt-meta{font-size:12px;color:rgba(255,255,255,.45)}
+  .appt-contact{font-size:11px;color:rgba(255,255,255,.25);margin-top:2px}
+  .appt-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+  .status-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize}
+  .appt-actions{display:flex;gap:5px}
+  .confirm-btn{padding:5px 10px;border-radius:8px;border:none;background:rgba(78,255,145,.2);color:var(--green);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .cancel-btn{padding:5px 8px;border-radius:8px;border:none;background:rgba(255,110,80,.15);color:var(--orange);font-size:11px;cursor:pointer}
+  .complete-btn{padding:5px 10px;border-radius:8px;border:none;background:rgba(78,201,255,.15);color:var(--blue);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+  /* dashboard */
+  .dash-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px}
+  .dash-sub{font-size:12px;color:var(--gray);margin-bottom:16px}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+  .stat-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:16px 14px}
+  .stat-icon{font-size:22px;margin-bottom:4px}
+  .stat-value{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;margin-bottom:2px}
+  .stat-label{font-size:11px;color:var(--gray)}
+  .section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px;margin-top:6px}
+  .schedule-row{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border-radius:12px;padding:11px 13px;margin-bottom:7px;border:1px solid rgba(255,255,255,.06)}
+  .schedule-time{font-size:13px;color:var(--orange);font-weight:600;width:68px;flex-shrink:0}
+  .schedule-client{font-size:14px;font-weight:600}
+  .schedule-meta{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+  .load-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .load-name{width:100px;font-size:13px;color:rgba(255,255,255,.7);flex-shrink:0}
+  .load-bar{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+  .load-fill{height:100%;border-radius:4px;transition:width .6s ease}
+  .load-count{font-size:12px;font-weight:600;width:56px;text-align:right;flex-shrink:0}
+
+  /* availability tab */
+  .avail-header{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:4px}
+  .avail-desc{font-size:13px;color:var(--gray);margin-bottom:16px;line-height:1.5}
+  .day-card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}
+  .day-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+  .day-closed{font-size:11px;color:rgba(255,110,80,.7);background:rgba(255,110,80,.1);padding:3px 9px;border-radius:20px}
+  .day-open{font-size:11px;color:var(--green);background:rgba(78,255,145,.1);padding:3px 9px;border-radius:20px}
+  .day-slots{display:flex;flex-wrap:wrap;gap:6px}
+  .manage-slot{padding:6px 12px;border-radius:9px;font-size:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+  .manage-slot.blocked{background:rgba(255,110,80,.12);border-color:rgba(255,110,80,.3);color:rgba(255,110,80,.7);text-decoration:line-through}
+  .manage-slot:hover{border-color:var(--orange)}
+
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,30px)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<div class="shell">
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">💈</div>
+      <div>
+        <div class="brand-name">100 Degrees</div>
+        <div class="brand-sub">Barbershop · Book · Manage</div>
+      </div>
+    </div>
+    <div class="status"><span class="dot"></span>Online</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('chat',this)">Chat</button>
+    <button class="tab" onclick="switchTab('book',this)">Book</button>
+    <button class="tab" onclick="switchTab('team',this)">Team</button>
+    <button class="tab" onclick="switchTab('services',this)">Services</button>
+    <button class="tab" onclick="switchTab('history',this)">History</button>
+    <button class="tab" onclick="switchTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="switchTab('availability',this)">⚙️ Hours</button>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel active" id="panel-chat">
+    <div class="chat-area" id="chat-area">
+      <div class="msg-row">
+        <div class="avatar">💈</div>
+        <div class="bubble ai">Hey! 👋 Welcome to <strong>100 Degrees Barbershop</strong>. I can help you book an appointment or check availability. What can I do for you?</div>
+      </div>
+      <div class="msg-row">
+        <div class="avatar">💈</div>
+        <div class="bubble ai" style="background:rgba(255,110,80,.08);border-color:rgba(255,110,80,.2)">
+          <div style="font-size:12px;color:var(--orange);font-weight:600;margin-bottom:6px">🧪 TEST MODE — Try these:</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.8">
+            • Ask <em>"what times are open this week?"</em><br>
+            • Ask <em>"how much is a haircut?"</em><br>
+            • Tap <strong>Book</strong> tab and make a test booking<br>
+            • Tap <strong>⚙️ Hours</strong> to block off time slots<br>
+            • Tap <strong>Dashboard</strong> to see your schedule
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:8px">Remove this box before sharing with customers</div>
+        </div>
+      </div>
+    </div>
+    <div class="quick-wrap" id="quick-wrap">
+      <button class="chip" onclick="sendQuick('What times are available this week?')">📅 Check Availability</button>
+      <button class="chip" onclick="sendQuick('I\'d like to book an appointment')">✂️ Book Now</button>
+      <button class="chip" onclick="sendQuick('What services do you offer?')">💈 Services</button>
+      <button class="chip" onclick="sendQuick('What are your hours?')">⏰ Hours</button>
+      <button class="chip" onclick="sendQuick('How much does a fade cost?')">💰 Pricing</button>
+      <button class="chip" onclick="sendQuick('Can you help me pick a style?')">🎨 Style Advice</button>
+    </div>
+    <div class="input-row">
+      <input class="chat-input" id="chat-input" placeholder="Ask about availability, pricing, styles..." onkeydown="if(event.key==='Enter')sendMessage()">
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- BOOK -->
+  <div class="panel" id="panel-book">
+    <div class="scroll"><div class="intake-wrap" id="intake-wrap"></div></div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="panel" id="panel-team">
+    <div class="scroll"><div class="team-grid" id="team-grid"></div></div>
+  </div>
+
+  <!-- SERVICES -->
+  <div class="panel" id="panel-services">
+    <div class="scroll"><div class="svc-list" id="svc-list"></div></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="panel" id="panel-history">
+    <div class="scroll" id="history-scroll"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel" id="panel-dashboard">
+    <div class="scroll" id="dashboard-scroll"></div>
+  </div>
+
+  <!-- AVAILABILITY MANAGER -->
+  <div class="panel" id="panel-availability">
+    <div class="scroll" id="avail-scroll"></div>
+  </div>
+</div>
+
+<script>
+// ── SHOP CONFIG (customize per barber) ──
+const SHOP = {
+  name: '100 Degrees Barbershop',
+  slotMinutes: 35,
+  // Weekly schedule — 8am to 12pm, 35-min slots
+  schedule: {
+    Mon: [],
+    Tue: [],
+    Wed: ['8:00','8:35','9:10','9:45','10:20','10:55','11:30'],
+    Thu: ['8:00','8:35','9:10','9:45','10:20','10:55','11:30'],
+    Fri: ['8:00','8:35','9:10','9:45','10:20','10:55','11:30'],
+    Sat: ['8:00','8:35','9:10','9:45','10:20','10:55','11:30'],
+    Sun: ['8:00','8:35','9:10','9:45','10:20','10:55','11:30'],
+  }
+};
+
+// blocked slots stored as "Day-HH:MM" e.g. "Mon-9:00"
+let blockedSlots = JSON.parse(localStorage.getItem('blocked')||'[]');
+function saveBlocked(){localStorage.setItem('blocked',JSON.stringify(blockedSlots));}
+
+const STYLISTS = [
+  {name:'Raul',role:'Owner & Head Barber',spec:'Fades, Tapers & Cuts',color:'#ff6e50',emoji:'✂️'},
+  {name:'Marcus',role:'Barber',spec:'Fades & Tapers',color:'#7c5cfc',emoji:'💈'},
+  {name:'Jada',role:'Stylist',spec:'Color & Braids',color:'#ff6eb4',emoji:'🎨'},
+  {name:'Trey',role:'Barber',spec:'Cuts & Beards',color:'#4ec9ff',emoji:'💈'},
+];
+const SERVICES=[
+  {name:'Adult Haircut',price:'$40',time:'35 min',icon:'✂️',desc:'Any style, any length'},
+  {name:"Kid's Cut",price:'$25',time:'35 min',icon:'🧒',desc:'Ages 12 and under'},
+  {name:'Full Shave',price:'$25',time:'35 min',icon:'🪒',desc:'Clean full head shave'},
+  {name:'Lineup',price:'$20',time:'35 min',icon:'📐',desc:'Edge up & line up'},
+];
+let APPOINTMENTS = JSON.parse(localStorage.getItem('appointments')||'[]');
+if(!APPOINTMENTS.length){
+  APPOINTMENTS=[
+    {id:1,client:'Jordan Miles',service:'Fade / Taper',stylist:'Raul',day:'Wed',time:'8:00',status:'confirmed',phone:'555-0101'},
+    {id:2,client:'Aisha Brown',service:'Braids',stylist:'Jada',day:'Wed',time:'9:10',status:'confirmed',phone:'555-0102'},
+    {id:3,client:'Devon King',service:'Cut + Beard',stylist:'Raul',day:'Thu',time:'10:20',status:'pending',phone:'555-0103'},
+    {id:4,client:'Maya Chen',service:'Haircut',stylist:'Raul',day:'Fri',time:'8:35',status:'confirmed',phone:'555-0104'},
+    {id:5,client:'Tyler Ross',service:'Fade / Taper',stylist:'Raul',day:'Sat',time:'11:30',status:'pending',phone:'555-0105'},
+  ];
+  saveAppts();
+}
+function saveAppts(){localStorage.setItem('appointments',JSON.stringify(APPOINTMENTS));}
+
+// ── AVAILABILITY ENGINE ──
+function getAvailableSlots(day){
+  const slots = SHOP.schedule[day]||[];
+  const booked = APPOINTMENTS.filter(a=>a.day===day&&(a.status==='confirmed'||a.status==='pending')).map(a=>a.time);
+  return slots.map(t=>({time:t, available: !booked.includes(t) && !blockedSlots.includes(day+'-'+t)}));
+}
+
+function getWeekAvailability(){
+  const days = Object.keys(SHOP.schedule);
+  const result = {};
+  days.forEach(d=>{
+    const avail = getAvailableSlots(d).filter(s=>s.available);
+    if(avail.length) result[d] = avail.map(s=>s.time);
+  });
+  return result;
+}
+
+function formatTime(t){
+  const [h,m]=t.split(':').map(Number);
+  const ampm=h>=12?'PM':'AM';
+  return `${h%12||12}:${m.toString().padStart(2,'0')} ${ampm}`;
+}
+
+// ── CHAT ──
+let chatHistory=[];
+let loading=false;
+
+function buildSystemPrompt(){
+  const avail = getWeekAvailability();
+  const availStr = Object.entries(avail).map(([d,slots])=>
+    `${d}: ${slots.map(formatTime).join(', ')}`
+  ).join('\n');
+  return `You are the AI booking assistant for ${SHOP.name}. You help clients book appointments and check availability.
+
+REAL-TIME AVAILABILITY (these are the ONLY open slots — don't make up times):
+${availStr||'No availability this week.'}
+
+Services: Adult Haircut $40, Kid's Cut $25, Full Shave $25, Lineup $20. All slots are 35 minutes.
+Main barber: Raul (owner). Other barbers: Marcus, Jada, Trey (availability may vary).
+Hours: Wed-Sun 8am-12pm. Closed Monday and Tuesday.
+
+When a client asks about availability, ONLY show times from the availability list above. If a slot isn't listed, it's taken or blocked — say so. When they pick a time, confirm it and tell them to use the Book tab to lock it in. Be friendly, concise, use emojis. Never invent availability.`;
+}
+
+async function sendMessage(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text||loading)return;
+  input.value='';
+  document.getElementById('quick-wrap').style.display='none';
+  addMsg('user',text);
+  chatHistory.push({role:'user',content:text});
+  showTyping();loading=true;
+  document.getElementById('send-btn').disabled=true;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:buildSystemPrompt(),messages:chatHistory})
+    });
+    const data=await res.json();
+    const reply=data.content?.map(b=>b.text||'').join('')||'Sorry, try again!';
+    chatHistory.push({role:'assistant',content:reply});
+    removeTyping();addMsg('ai',reply);
+
+    // if reply contains availability, also show slot buttons
+    if(text.toLowerCase().includes('available')||text.toLowerCase().includes('open')||text.toLowerCase().includes('free')||text.toLowerCase().includes('time')){
+      showSlotPicker();
+    }
+  }catch(e){removeTyping();addMsg('ai','Connection issue — please try again!');}
+  loading=false;document.getElementById('send-btn').disabled=false;
+}
+
+function sendQuick(text){document.getElementById('chat-input').value=text;sendMessage();}
+
+function addMsg(role,text){
+  const area=document.getElementById('chat-area');
+  const row=document.createElement('div');
+  row.className='msg-row'+(role==='user'?' user':'');
+  const bubble=document.createElement('div');
+  bubble.className='bubble '+role;
+  bubble.innerHTML=text.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  if(role==='ai'){const av=document.createElement('div');av.className='avatar';av.textContent='💈';row.appendChild(av);}
+  row.appendChild(bubble);area.appendChild(row);area.scrollTop=area.scrollHeight;
+}
+function showTyping(){const area=document.getElementById('chat-area');const row=document.createElement('div');row.className='msg-row';row.id='typing-row';row.innerHTML='<div class="avatar">💈</div><div class="bubble ai"><div class="typing"><span></span><span></span><span></span></div></div>';area.appendChild(row);area.scrollTop=area.scrollHeight;}
+function removeTyping(){const t=document.getElementById('typing-row');if(t)t.remove();}
+
+function showSlotPicker(){
+  const area=document.getElementById('chat-area');
+  const avail=getWeekAvailability();
+  if(!Object.keys(avail).length)return;
+  const wrap=document.createElement('div');
+  wrap.className='msg-row';
+  const box=document.createElement('div');
+  box.className='slots-bubble';
+  box.innerHTML='<div class="slots-title">📅 Tap a slot to book it:</div>';
+  const grid=document.createElement('div');
+  grid.className='slots-grid';
+  let count=0;
+  Object.entries(avail).forEach(([day,slots])=>{
+    if(count>=12)return;
+    slots.slice(0,4).forEach(t=>{
+      if(count>=12)return;
+      const btn=document.createElement('button');
+      btn.className='slot-btn';
+      btn.textContent=`${day} ${formatTime(t)}`;
+      btn.onclick=()=>bookSlotFromChat(day,t,btn);
+      grid.appendChild(btn);count++;
+    });
+  });
+  box.appendChild(grid);wrap.appendChild(box);area.appendChild(wrap);area.scrollTop=area.scrollHeight;
+}
+
+function bookSlotFromChat(day,time,btn){
+  intakeData={day,time};intakeStep=0;
+  btn.classList.add('booked');btn.textContent='✓ '+btn.textContent;btn.onclick=null;
+  addMsg('ai',`Great! I've pre-selected **${day} at ${formatTime(time)}** for you. Tap the **Book** tab to finish your booking! 📋`);
+  document.getElementById('chat-area').scrollTop=9999;
+}
+
+// ── TABS ──
+function switchTab(name,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='team')renderTeam();
+  if(name==='services')renderServices();
+  if(name==='history')renderHistory();
+  if(name==='dashboard')renderDashboard();
+  if(name==='book')renderIntake();
+  if(name==='availability')renderAvailability();
+}
+
+// ── INTAKE ──
+let intakeStep=0,intakeData={};
+
+function renderIntake(){
+  const wrap=document.getElementById('intake-wrap');
+  if(intakeData.submitted){renderSuccess();return;}
+  wrap.innerHTML=`<div class="intake-title">Book an Appointment</div>
+    <div class="step-dots" id="step-dots">${[0,1,2,3].map(i=>`<div class="step-dot ${i<=intakeStep?'done':''}"></div>`).join('')}</div>
+    <div id="intake-content"></div>`;
+  [step0,step1,step2,step3][intakeStep](document.getElementById('intake-content'));
+}
+
+function step0(c){
+  c.innerHTML=`<div class="form-step">
+    <div class="step-label">Step 1 — Your Info</div>
+    <div class="field-group"><label class="field-label">Full Name</label><input class="field" id="f-name" placeholder="Jordan Miles" value="${intakeData.name||''}"></div>
+    <div class="field-group"><label class="field-label">Phone</label><input class="field" id="f-phone" type="tel" placeholder="555-0100" value="${intakeData.phone||''}"></div>
+    <div class="field-group"><label class="field-label">Email</label><input class="field" id="f-email" type="email" placeholder="you@email.com" value="${intakeData.email||''}"></div>
+    <div class="field-group"><label class="field-label">Special Request / Add-on</label>
+      <input class="field" id="f-request" placeholder="e.g. design, beard taper, hard part..." value="${intakeData.request||''}">
+      <span style="font-size:11px;color:var(--gray);margin-top:4px">Additional cost may apply — Raul will confirm price at appointment.</span>
+    </div>
+    <button class="next-btn" onclick="nextStep(0)">Next →</button>
+  </div>`;
+}
+
+function step1(c){
+  const grid=SERVICES.map(s=>`<button class="svc-option ${intakeData.service===s.name?'selected':''}" onclick="selectSvc('${s.name}',this)">
+    <span class="svc-icon">${s.icon}</span><span class="svc-name">${s.name}</span><span class="svc-price">${s.price}</span>
+  </button>`).join('');
+  c.innerHTML=`<div class="form-step">
+    <div class="step-label">Step 2 — Choose Service</div>
+    <div class="svc-grid">${grid}</div>
+    <div class="nav-row"><button class="back-btn" onclick="prevStep()">← Back</button><button class="next-btn" onclick="nextStep(1)">Next →</button></div>
+  </div>`;
+}
+
+function step2(c){
+  // Show real availability slots
+  const days=Object.keys(SHOP.schedule);
+  let slotsHtml='';
+  days.forEach(day=>{
+    const slots=getAvailableSlots(day);
+    if(!slots.length)return;
+    const openSlots=slots.filter(s=>s.available);
+    slotsHtml+=`<div class="avail-day-label">${day} <span style="color:var(--gray);font-size:10px;font-weight:400">${openSlots.length} open</span></div>
+    <div class="time-slots">${slots.map(s=>`<button class="time-slot ${!s.available?'taken':''}${intakeData.day===day&&intakeData.time===s.time?' selected-slot':''}" 
+      ${!s.available?'disabled':''} onclick="selectSlot('${day}','${s.time}',this)">${formatTime(s.time)}</button>`).join('')}</div>`;
+  });
+  c.innerHTML=`<div class="form-step">
+    <div class="step-label">Step 3 — Pick Your Slot</div>
+    ${intakeData.day?`<div style="background:rgba(255,110,80,.1);border:1px solid rgba(255,110,80,.3);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--orange);margin-bottom:8px">✓ Pre-selected: ${intakeData.day} at ${formatTime(intakeData.time)}</div>`:''}
+    <div class="avail-section">${slotsHtml||'<p style="color:var(--gray);font-size:13px">No availability this week. Check back soon!</p>'}</div>
+    <div class="nav-row" style="margin-top:12px"><button class="back-btn" onclick="prevStep()">← Back</button><button class="next-btn" onclick="nextStep(2)">Next →</button></div>
+  </div>`;
+}
+
+function step3(c){
+  const stylistOpts=[{name:'Any Available',role:'First open slot',emoji:'🎲'},...STYLISTS].map(st=>`
+    <button class="stylist-option ${intakeData.stylist===st.name?'selected':''}" onclick="selectStylist('${st.name}',this)">
+      <span style="font-size:24px">${st.emoji}</span><span class="st-name">${st.name}</span><span class="st-role">${st.role||'Any stylist'}</span>
+    </button>`).join('');
+  c.innerHTML=`<div class="form-step">
+    <div class="step-label">Step 4 — Pick a Stylist</div>
+    <div class="stylist-grid">${stylistOpts}</div>
+    <div class="field-group" style="margin-top:8px"><label class="field-label">Notes (optional)</label>
+      <textarea class="field" id="f-notes" style="height:70px;resize:none" placeholder="Any special requests...">${intakeData.notes||''}</textarea>
+    </div>
+    <div class="nav-row"><button class="back-btn" onclick="prevStep()">← Back</button><button class="next-btn" onclick="submitIntake()">Confirm Booking ✓</button></div>
+  </div>`;
+}
+
+function renderSuccess(){
+  document.getElementById('intake-wrap').innerHTML=`<div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-title">You're booked!</div>
+    <div class="success-sub">See you ${intakeData.day} at ${formatTime(intakeData.time)}!</div>
+    <div class="summary-card">
+      <div class="summary-row"><span class="summary-label">Name</span><span class="summary-val">${intakeData.name}</span></div>
+      <div class="summary-row"><span class="summary-label">Service</span><span class="summary-val">${intakeData.service}</span></div>
+      <div class="summary-row"><span class="summary-label">Stylist</span><span class="summary-val">${intakeData.stylist||'Any available'}</span></div>
+      <div class="summary-row"><span class="summary-label">Day</span><span class="summary-val">${intakeData.day}</span></div>
+      <div class="summary-row"><span class="summary-label">Time</span><span class="summary-val">${formatTime(intakeData.time)}</span></div>
+      ${intakeData.request?`<div class="summary-row"><span class="summary-label">Add-on</span><span class="summary-val" style="color:var(--orange)">${intakeData.request} (+cost TBD)</span></div>`:''}
+    </div>
+    <button class="reset-btn" onclick="resetIntake()">Book Another</button>
+  </div>`;
+}
+
+function selectSvc(name,btn){intakeData.service=name;document.querySelectorAll('.svc-option').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}
+function selectSlot(day,time,btn){intakeData.day=day;intakeData.time=time;document.querySelectorAll('.time-slot').forEach(b=>b.classList.remove('selected-slot'));btn.classList.add('selected-slot');}
+function selectStylist(name,btn){intakeData.stylist=name;document.querySelectorAll('.stylist-option').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}
+
+function nextStep(from){
+  if(from===0){
+    intakeData.name=document.getElementById('f-name')?.value||'';
+    intakeData.phone=document.getElementById('f-phone')?.value||'';
+    intakeData.email=document.getElementById('f-email')?.value||'';
+    intakeData.request=document.getElementById('f-request')?.value||'';
+    if(!intakeData.name||!intakeData.phone){alert('Please enter your name and phone.');return;}
+  }
+  if(from===1&&!intakeData.service){alert('Please choose a service.');return;}
+  if(from===2&&!intakeData.day){alert('Please select an available time slot.');return;}
+  if(from===2&&!intakeData.stylist)intakeData.stylist='Any Available';
+  intakeStep=from+1;renderIntake();
+}
+function prevStep(){intakeStep=Math.max(0,intakeStep-1);renderIntake();}
+function submitIntake(){
+  intakeData.notes=document.getElementById('f-notes')?.value||'';
+  if(!intakeData.stylist){alert('Please pick a stylist.');return;}
+  APPOINTMENTS.push({id:Date.now(),client:intakeData.name,service:intakeData.service,stylist:intakeData.stylist,day:intakeData.day,time:intakeData.time,status:'pending',phone:intakeData.phone});
+  saveAppts();intakeData.submitted=true;renderSuccess();
+}
+function resetIntake(){intakeStep=0;intakeData={};renderIntake();}
+
+// ── TEAM ──
+function renderTeam(){
+  document.getElementById('team-grid').innerHTML=STYLISTS.map(st=>`
+    <div class="stylist-card">
+      <div class="stylist-avatar" style="background:${st.color}22;border:2px solid ${st.color}44">${st.emoji}</div>
+      <div class="stylist-card-name">${st.name}</div>
+      <div class="stylist-card-role" style="color:${st.color}">${st.role}</div>
+      <div class="stylist-card-spec">${st.spec}</div>
+      <button class="book-btn" style="background:linear-gradient(135deg,${st.color},${st.color}99)" onclick="goBook('stylist','${st.name}')">Book ${st.name}</button>
+    </div>`).join('');
+}
+
+// ── SERVICES ──
+function renderServices(){
+  document.getElementById('svc-list').innerHTML=SERVICES.map(s=>`
+    <div class="svc-card">
+      <div class="svc-card-icon">${s.icon}</div>
+      <div class="svc-info">
+        <div class="svc-card-name">${s.name}</div>
+        <div class="svc-card-desc">${s.desc}</div>
+        <div class="svc-time-label">⏱ ${s.time}</div>
+      </div>
+      <div class="svc-right">
+        <div class="svc-price">${s.price}</div>
+        <button class="book-small" onclick="goBook('service','${s.name}')">Book</button>
+      </div>
+    </div>`).join('');
+}
+
+function goBook(field,val){
+  intakeData[field]=val;intakeStep=field==='stylist'?0:0;
+  if(field==='service'){intakeData.service=val;intakeStep=2;}
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===1);});
+  document.querySelectorAll('.panel').forEach((p,i)=>{p.classList.toggle('active',i===1);});
+  renderIntake();
+}
+
+// ── HISTORY ──
+const SC={confirmed:'#4eff91',pending:'#ffd04e',completed:'#4ec9ff',cancelled:'#ff6e50'};
+const SB={confirmed:'rgba(78,255,145,.12)',pending:'rgba(255,208,78,.12)',completed:'rgba(78,201,255,.12)',cancelled:'rgba(255,110,80,.12)'};
+
+function renderHistory(){
+  document.getElementById('history-scroll').innerHTML=
+    `<div class="history-header"><div class="history-title">Appointments</div><div class="history-count">${APPOINTMENTS.length} total</div></div>`+
+    (APPOINTMENTS.length?APPOINTMENTS.slice().reverse().map(a=>`
+    <div class="appt-card" id="appt-${a.id}">
+      <div>
+        <div class="appt-client">${a.client}</div>
+        <div class="appt-meta">${a.service} · ${a.stylist}</div>
+        <div class="appt-meta">${a.day} at ${formatTime(a.time)}</div>
+        <div class="appt-contact">${a.phone}</div>
+      </div>
+      <div class="appt-right">
+        <span class="status-badge" style="color:${SC[a.status]};background:${SB[a.status]}">${a.status}</span>
+        ${a.status==='pending'?`<div class="appt-actions"><button class="confirm-btn" onclick="updateAppt(${a.id},'confirmed')">✓</button><button class="cancel-btn" onclick="updateAppt(${a.id},'cancelled')">✕</button></div>`:''}
+        ${a.status==='confirmed'?`<button class="complete-btn" onclick="updateAppt(${a.id},'completed')">Done</button>`:''}
+      </div>
+    </div>`).join(''):'<p style="color:var(--gray);font-size:13px;text-align:center;padding:20px 0">No appointments yet</p>');
+}
+
+function updateAppt(id,status){
+  const a=APPOINTMENTS.find(x=>x.id===id);
+  if(a){a.status=status;saveAppts();renderHistory();}
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const today=new Date().toLocaleDateString('en-US',{weekday:'short'}).slice(0,3);
+  const todayA=APPOINTMENTS.filter(a=>a.day===today);
+  const confirmed=APPOINTMENTS.filter(a=>a.status==='confirmed').length;
+  const completed=APPOINTMENTS.filter(a=>a.status==='completed').length;
+  const pending=APPOINTMENTS.filter(a=>a.status==='pending').length;
+  const revenue=completed*38;
+  document.getElementById('dashboard-scroll').innerHTML=`
+    <div class="dash-title">Owner Dashboard</div>
+    <div class="dash-sub">Today is ${today} · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric'})}</div>
+    <div style="background:rgba(255,110,80,.08);border:1px solid rgba(255,110,80,.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px;line-height:1.7;color:rgba(255,255,255,.65)">
+      <div style="color:var(--orange);font-weight:600;margin-bottom:4px">👋 Hi Raul! Quick tips:</div>
+      • <strong style="color:#fff">History tab</strong> — confirm or cancel new bookings<br>
+      • <strong style="color:#fff">⚙️ Hours tab</strong> — block off any slot (lunch, break, day off)<br>
+      • <strong style="color:#fff">Book tab</strong> — manually add a walk-in<br>
+      • Share your link on Facebook so clients can book themselves<br>
+      <button onclick="clearTestData()" style="margin-top:10px;padding:6px 14px;border-radius:8px;border:1px solid rgba(255,110,80,.4);background:rgba(255,110,80,.1);color:var(--orange);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">🗑 Clear test appointments</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value" style="color:#7c5cfc">${todayA.length}</div><div class="stat-label">Today's Bookings</div></div>
+      <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value" style="color:var(--yellow)">${pending}</div><div class="stat-label">Pending Confirm</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" style="color:var(--green)">${confirmed}</div><div class="stat-label">Confirmed</div></div>
+      <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" style="color:var(--yellow)">$${revenue}</div><div class="stat-label">Revenue (done)</div></div>
+    </div>
+    <div class="section-title">Today's Schedule</div>
+    ${todayA.length?todayA.sort((a,b)=>a.time.localeCompare(b.time)).map(a=>`
+      <div class="schedule-row">
+        <div class="schedule-time">${formatTime(a.time)}</div>
+        <div><div class="schedule-client">${a.client}</div><div class="schedule-meta">${a.service} · ${a.stylist}</div></div>
+        <span class="status-badge" style="color:${SC[a.status]};background:${SB[a.status]};margin-left:auto">${a.status}</span>
+      </div>`).join(''):'<div style="color:var(--gray);font-size:13px;text-align:center;padding:16px 0">No appointments today</div>'}
+    <div class="section-title" style="margin-top:16px">Stylist Load</div>
+    ${STYLISTS.map(st=>{
+      const count=APPOINTMENTS.filter(a=>a.stylist===st.name).length;
+      const pct=APPOINTMENTS.length?Math.round(count/APPOINTMENTS.length*100):0;
+      return `<div class="load-row"><div class="load-name">${st.emoji} ${st.name}</div>
+        <div class="load-bar"><div class="load-fill" style="width:${pct}%;background:${st.color}"></div></div>
+        <div class="load-count" style="color:${st.color}">${count}</div></div>`;
+    }).join('')}`;
+}
+
+// ── AVAILABILITY MANAGER (Owner) ──
+function renderAvailability(){
+  const el=document.getElementById('avail-scroll');
+  el.innerHTML=`<div class="avail-header">⚙️ Manage Hours</div>
+    <div class="avail-desc">Tap any slot to block it off (break, lunch, day off). Blocked slots won't show to clients. Changes save automatically.</div>
+    ${Object.entries(SHOP.schedule).map(([day,slots])=>`
+    <div class="day-card">
+      <div class="day-name">${day} <span class="${slots.length?'day-open':'day-closed'}">${slots.length?'Open':'Closed'}</span></div>
+      ${slots.length?`<div class="day-slots">${slots.map(t=>{
+        const key=day+'-'+t;
+        const isBlocked=blockedSlots.includes(key);
+        const isBooked=APPOINTMENTS.some(a=>a.day===day&&a.time===t&&(a.status==='confirmed'||a.status==='pending'));
+        return `<button class="manage-slot${isBlocked?' blocked':''}" onclick="toggleBlock('${key}',this)" ${isBooked?'title="Has booking"':''} style="${isBooked?'border-color:rgba(78,255,145,.3);color:rgba(78,255,145,.6)':''}">
+          ${isBooked?'🔒 ':''}${formatTime(t)}
+        </button>`;
+      }).join('')}</div>`:'<div style="color:var(--gray);font-size:12px">Shop is closed</div>'}
+    </div>`).join('')}`;
+}
+
+function toggleBlock(key,btn){
+  const idx=blockedSlots.indexOf(key);
+  if(idx>-1){blockedSlots.splice(idx,1);btn.classList.remove('blocked');}
+  else{blockedSlots.push(key);btn.classList.add('blocked');}
+  saveBlocked();
+}
+
+// init
+renderIntake();renderTeam();renderServices();
+
+function clearTestData(){
+  if(!confirm('Clear all test appointments and start fresh?'))return;
+  APPOINTMENTS=[];saveAppts();
+  blockedSlots=[];saveBlocked();
+  renderDashboard();renderHistory();
+  alert('Done! App is clean and ready for real customers. 💈');
+}
+</script>
+</body>
+</html>
