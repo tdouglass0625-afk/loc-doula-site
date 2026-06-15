@@ -182,7 +182,6 @@
     <div style="display:flex;align-items:center;gap:10px">
       <div class="rating">★ 5.0</div>
       <div class="status"><span class="dot"></span>Online</div>
-      <div class="key-badge" onclick="showKeyModal()">🔑 API Key</div>
     </div>
   </div>
   <div class="tabs">
@@ -242,32 +241,7 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="key-modal" style="display:none;">
-  <div class="modal-box">
-    <div class="modal-icon">🔐</div>
-    <div class="modal-title">Enter your Anthropic API key</div>
-    <div class="modal-sub">Store it locally in your browser. This is required for chat to work on the static site.</div>
-    <input class="modal-input" id="key-input" placeholder="sk-..." />
-    <button class="modal-btn" onclick="saveKey()">Save Key</button>
-    <div class="modal-hint">Use your own Anthropic key; the site does not store it on the server.</div>
-  </div>
-</div>
-
 <script>
-// API key management
-function getKey(){return localStorage.getItem('locdoula_apikey')||'';}
-function saveKey(){
-  const k=document.getElementById('key-input').value.trim();
-  if(!k.startsWith('sk-')){alert('That doesn\'t look right — key should start with sk-');return;}
-  localStorage.setItem('locdoula_apikey',k);
-  document.getElementById('key-modal').style.display='none';
-}
-function showKeyModal(){
-  document.getElementById('key-input').value=getKey();
-  document.getElementById('key-modal').style.display='flex';
-}
-window.addEventListener('DOMContentLoaded',()=>{if(!getKey())showKeyModal();});
-
 const SHOP = {
   name: 'J. Tyler Creations & Co.',
   stylist: 'Janae Tyler',
@@ -385,26 +359,14 @@ async function sendMessage(){
   showTyping();loading=true;
   document.getElementById('send-btn').disabled=true;
   try{
-    const apiKey = getKey();
-    if(!apiKey){removeTyping();addMsg('ai','Please add your API key first — tap the 🔑 icon in the top right.');loading=false;document.getElementById('send-btn').disabled=false;showKeyModal();return;}
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 800,
-        system: buildSystemPrompt(),
-        messages: chatHistory
-      })
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({system: buildSystemPrompt(), messages: chatHistory})
     });
     const data = await res.json();
     if(!res.ok){throw new Error(data.error?.message||JSON.stringify(data));}
-    const reply = data.content?.map(item=>item.text||'').join('') || data.completion || data.reply || 'Sorry, try again!';
+    const reply = data.reply || 'Sorry, try again!';
     chatHistory.push({role:'assistant',content:reply});
     removeTyping();addMsg('ai',reply);
     if(text.toLowerCase().match(/available|open|free|time|slot|book|when/))showSlotPicker();
